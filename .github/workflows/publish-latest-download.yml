@@ -1,10 +1,9 @@
-﻿name: Publish latest Windows download
+name: Publish latest Windows download
 
 on:
   push:
     branches:
       - 'automation/build-*'
-  workflow_dispatch:
 
 permissions:
   contents: write
