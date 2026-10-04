@@ -23,8 +23,7 @@ jobs:
         run: |
           test -s release/MC-Artist-Studio.exe
           test -s release/MC-Artist-Studio.msi
-          test -s release/MC-Artist-Studio.msi.zip
-          test -s release/MC-Artist-Studio.msi.zip.sig
+          test -s release/MC-Artist-Studio.msi.sig
           test -s release/latest.json
           jq -e '.tag and .title and .notes and .version' release/release.json >/dev/null
           jq -e '.version and .platforms["windows-x86_64"].url and .platforms["windows-x86_64"].signature' release/latest.json >/dev/null
@@ -37,7 +36,7 @@ jobs:
           TAG="$(jq -r '.tag' release/release.json)"
           TITLE="$(jq -r '.title' release/release.json)"
           NOTES="$(jq -r '.notes' release/release.json)"
-          ASSETS=(release/MC-Artist-Studio.exe release/MC-Artist-Studio.msi release/MC-Artist-Studio.msi.zip release/MC-Artist-Studio.msi.zip.sig release/latest.json)
+          ASSETS=(release/MC-Artist-Studio.exe release/MC-Artist-Studio.msi release/MC-Artist-Studio.msi.sig release/latest.json)
           if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             gh release upload "$TAG" "${ASSETS[@]}" --repo "$GITHUB_REPOSITORY" --clobber
             gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --title "$TITLE" --notes "$NOTES" --latest
