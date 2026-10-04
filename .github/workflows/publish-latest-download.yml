@@ -1,0 +1,58 @@
+﻿name: Publish latest Windows download
+
+on:
+  push:
+    branches:
+      - 'automation/build-*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publish-latest-windows-build
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the release payload
+        uses: actions/checkout@v4
+
+      - name: Validate release payload
+        run: |
+          test -s release/MC-Artist-Studio.exe
+          jq -e '.tag and .title and .notes and .version' release/release.json >/dev/null
+
+      - name: Publish public GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          TAG="$(jq -r '.tag' release/release.json)"
+          TITLE="$(jq -r '.title' release/release.json)"
+          NOTES="$(jq -r '.notes' release/release.json)"
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$TAG" release/MC-Artist-Studio.exe --repo "$GITHUB_REPOSITORY" --clobber
+            gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --title "$TITLE" --notes "$NOTES" --latest
+          else
+            gh release create "$TAG" release/MC-Artist-Studio.exe --repo "$GITHUB_REPOSITORY" --target main --title "$TITLE" --notes "$NOTES" --latest
+          fi
+
+      - name: Redeploy website from the new release
+        env:
+          VERCEL_DEPLOY_HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$VERCEL_DEPLOY_HOOK_URL" ]]; then
+            echo "::warning::VERCEL_DEPLOY_HOOK_URL is not configured; the release is available, but the site will not refresh its release details."
+          else
+            curl --fail --silent --show-error --retry 3 "$VERCEL_DEPLOY_HOOK_URL"
+          fi
+
+      - name: Remove temporary payload branch
+        env:
+          BRANCH_NAME: ${{ github.ref_name }}
+          GH_TOKEN: ${{ github.token }}
+        run: git push origin --delete "$BRANCH_NAME"
