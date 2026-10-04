@@ -22,6 +22,7 @@ jobs:
       - name: Validate release payload
         run: |
           test -s release/MC-Artist-Studio.exe
+          test -s release/MC-Artist-Studio.msi
           jq -e '.tag and .title and .notes and .version' release/release.json >/dev/null
 
       - name: Publish public GitHub Release
@@ -33,10 +34,10 @@ jobs:
           TITLE="$(jq -r '.title' release/release.json)"
           NOTES="$(jq -r '.notes' release/release.json)"
           if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            gh release upload "$TAG" release/MC-Artist-Studio.exe --repo "$GITHUB_REPOSITORY" --clobber
+            gh release upload "$TAG" release/MC-Artist-Studio.exe release/MC-Artist-Studio.msi --repo "$GITHUB_REPOSITORY" --clobber
             gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --title "$TITLE" --notes "$NOTES" --latest
           else
-            gh release create "$TAG" release/MC-Artist-Studio.exe --repo "$GITHUB_REPOSITORY" --target main --title "$TITLE" --notes "$NOTES" --latest
+            gh release create "$TAG" release/MC-Artist-Studio.exe release/MC-Artist-Studio.msi --repo "$GITHUB_REPOSITORY" --target main --title "$TITLE" --notes "$NOTES" --latest
           fi
 
       - name: Redeploy website from the new release
