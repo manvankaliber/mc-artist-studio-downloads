@@ -1,4 +1,4 @@
-name: Publish latest Windows download
+name: Publish latest desktop downloads
 
 on:
   push:
@@ -24,9 +24,13 @@ jobs:
           test -s release/MC-Artist-Studio.exe
           test -s release/MC-Artist-Studio.msi
           test -s release/MC-Artist-Studio.msi.sig
+          test -s release/MC-Artist-Studio.AppImage
+          test -s release/MC-Artist-Studio.deb
+          test -s release/MC-Artist-Studio.AppImage.sig
           test -s release/latest.json
           jq -e '.tag and .title and .notes and .version' release/release.json >/dev/null
           jq -e '.version and .platforms["windows-x86_64"].url and .platforms["windows-x86_64"].signature' release/latest.json >/dev/null
+          jq -e '.platforms["linux-x86_64"].url and .platforms["linux-x86_64"].signature' release/latest.json >/dev/null
 
       - name: Publish public GitHub Release
         env:
@@ -36,7 +40,7 @@ jobs:
           TAG="$(jq -r '.tag' release/release.json)"
           TITLE="$(jq -r '.title' release/release.json)"
           NOTES="$(jq -r '.notes' release/release.json)"
-          ASSETS=(release/MC-Artist-Studio.exe release/MC-Artist-Studio.msi release/MC-Artist-Studio.msi.sig release/latest.json)
+          ASSETS=(release/MC-Artist-Studio.exe release/MC-Artist-Studio.msi release/MC-Artist-Studio.msi.sig release/MC-Artist-Studio.AppImage release/MC-Artist-Studio.AppImage.sig release/MC-Artist-Studio.deb release/latest.json)
           if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             gh release upload "$TAG" "${ASSETS[@]}" --repo "$GITHUB_REPOSITORY" --clobber
             gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --title "$TITLE" --notes "$NOTES" --latest
