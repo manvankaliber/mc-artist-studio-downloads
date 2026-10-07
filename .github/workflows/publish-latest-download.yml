@@ -1,15 +1,15 @@
-name: Publish latest desktop downloads
+name: Publish desktop release channel
 
 on:
   push:
     branches:
-      - "automation/build-*"
+      - 'automation/build-*'
 
 permissions:
   contents: write
 
 concurrency:
-  group: publish-latest-windows-build
+  group: publish-desktop-release
   cancel-in-progress: false
 
 jobs:
@@ -21,40 +21,126 @@ jobs:
 
       - name: Validate release payload
         run: |
+          set -euo pipefail
           test -s release/MC-Artist-Studio.exe
           test -s release/MC-Artist-Studio.msi
           test -s release/MC-Artist-Studio.msi.sig
-          test -s release/MC-Artist-Studio.AppImage
-          test -s release/MC-Artist-Studio.deb
-          test -s release/MC-Artist-Studio.AppImage.sig
           test -s release/latest.json
-          jq -e '.tag and .title and .notes and .version' release/release.json >/dev/null
+          jq -e '.channel and .tag and .title and .notes and .version and .sourceSha' release/release.json >/dev/null
           jq -e '.version and .platforms["windows-x86_64"].url and .platforms["windows-x86_64"].signature' release/latest.json >/dev/null
-          jq -e '.platforms["linux-x86_64"].url and .platforms["linux-x86_64"].signature' release/latest.json >/dev/null
+          CHANNEL="$(jq -r '.channel' release/release.json)"
+          VERSION="$(jq -r '.version' release/release.json)"
+          TAG="$(jq -r '.tag' release/release.json)"
+          if [[ "$CHANNEL" == "canary" ]]; then
+            test "$TAG" = "canary"
+          else
+            test "$TAG" = "v$VERSION"
+          fi
+          case "$CHANNEL" in
+            official)
+              [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
+              test -s release/MC-Artist-Studio.AppImage
+              test -s release/MC-Artist-Studio.AppImage.sig
+              test -s release/MC-Artist-Studio.deb
+              jq -e '.platforms["linux-x86_64"].url and .platforms["linux-x86_64"].signature' release/latest.json >/dev/null
+              ;;
+            beta)
+              [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+-beta\.[0-9]+$ ]]
+              test -s release/MC-Artist-Studio.AppImage
+              test -s release/MC-Artist-Studio.AppImage.sig
+              test -s release/MC-Artist-Studio.deb
+              jq -e '.platforms["linux-x86_64"].url and .platforms["linux-x86_64"].signature' release/latest.json >/dev/null
+              ;;
+            nightly)
+              [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+-nightly\.[0-9]+\.[0-9]+\.[0-9]+$ ]]
+              ;;
+            canary)
+              [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+-canary\.[1-9][0-9]*$ ]]
+              ;;
+            *) echo "Unsupported release channel: $CHANNEL"; exit 1 ;;
+          esac
 
       - name: Publish public GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
+          CHANNEL="$(jq -r '.channel' release/release.json)"
           TAG="$(jq -r '.tag' release/release.json)"
           TITLE="$(jq -r '.title' release/release.json)"
           NOTES="$(jq -r '.notes' release/release.json)"
-          ASSETS=(release/MC-Artist-Studio.exe release/MC-Artist-Studio.msi release/MC-Artist-Studio.msi.sig release/MC-Artist-Studio.AppImage release/MC-Artist-Studio.AppImage.sig release/MC-Artist-Studio.deb release/latest.json)
+          ASSETS=(release/MC-Artist-Studio.exe release/MC-Artist-Studio.msi release/MC-Artist-Studio.msi.sig release/latest.json)
+          if [[ "$CHANNEL" == "official" || "$CHANNEL" == "beta" ]]; then
+            ASSETS+=(release/MC-Artist-Studio.AppImage release/MC-Artist-Studio.AppImage.sig release/MC-Artist-Studio.deb)
+          fi
           if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             gh release upload "$TAG" "${ASSETS[@]}" --repo "$GITHUB_REPOSITORY" --clobber
-            gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --title "$TITLE" --notes "$NOTES" --latest
-          else
+            if [[ "$CHANNEL" == "official" ]]; then
+              gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --title "$TITLE" --notes "$NOTES" --latest
+            else
+              gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --title "$TITLE" --notes "$NOTES" --prerelease
+            fi
+          elif [[ "$CHANNEL" == "official" ]]; then
             gh release create "$TAG" "${ASSETS[@]}" --repo "$GITHUB_REPOSITORY" --target main --title "$TITLE" --notes "$NOTES" --latest
+          else
+            gh release create "$TAG" "${ASSETS[@]}" --repo "$GITHUB_REPOSITORY" --target main --title "$TITLE" --notes "$NOTES" --prerelease
           fi
 
-      - name: Redeploy website from the new release
+      - name: Update the public preview feed
+        run: |
+          set -euo pipefail
+          CHANNEL="$(jq -r '.channel' release/release.json)"
+          mkdir -p "$RUNNER_TEMP/channel-payload"
+          printf '%s\n' "$CHANNEL" > "$RUNNER_TEMP/channel-payload/channel.txt"
+          if [[ "$CHANNEL" == "official" ]]; then
+            exit 0
+          fi
+          TAG="$(jq -r '.tag' release/release.json)"
+          VERSION="$(jq -r '.version' release/release.json)"
+          RELEASE_URL="https://github.com/$GITHUB_REPOSITORY/releases/tag/$TAG"
+          ASSET_BASE="https://github.com/$GITHUB_REPOSITORY/releases/download/$TAG"
+          DOWNLOADS="$(jq -n \
+            --arg installer "$ASSET_BASE/MC-Artist-Studio.msi" \
+            --arg portable "$ASSET_BASE/MC-Artist-Studio.exe" \
+            '{windowsInstaller:$installer,windowsPortable:$portable}')"
+          if [[ "$CHANNEL" == "beta" ]]; then
+            DOWNLOADS="$(jq -c \
+              --arg appimage "$ASSET_BASE/MC-Artist-Studio.AppImage" \
+              --arg deb "$ASSET_BASE/MC-Artist-Studio.deb" \
+              '. + {linuxAppImage:$appimage,linuxDeb:$deb}' <<< "$DOWNLOADS")"
+          fi
+          cp release/latest.json "$RUNNER_TEMP/channel-payload/latest.json"
+          jq \
+            --arg channel "$CHANNEL" \
+            --arg releaseUrl "$RELEASE_URL" \
+            --arg publishedAt "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            --argjson downloads "$DOWNLOADS" \
+            '. + {channel:$channel,releaseUrl:$releaseUrl,publishedAt:$publishedAt,downloads:$downloads}' \
+            release/release.json > "$RUNNER_TEMP/channel-payload/release.json"
+          git fetch origin +refs/heads/main:refs/remotes/origin/main
+          git switch --force-create main --track origin/main
+          mkdir -p "channels/$CHANNEL"
+          cp "$RUNNER_TEMP/channel-payload/latest.json" "channels/$CHANNEL/latest.json"
+          cp "$RUNNER_TEMP/channel-payload/release.json" "channels/$CHANNEL/release.json"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "channels/$CHANNEL/latest.json" "channels/$CHANNEL/release.json"
+          if ! git diff --cached --quiet; then
+            git commit -m "Update $CHANNEL release feed to $VERSION"
+            git push origin main
+          fi
+
+      - name: Redeploy website after an official release
         env:
           VERCEL_DEPLOY_HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
         run: |
           set -euo pipefail
+          CHANNEL="$(cat "$RUNNER_TEMP/channel-payload/channel.txt")"
+          if [[ "$CHANNEL" != "official" ]]; then
+            exit 0
+          fi
           if [[ -z "$VERCEL_DEPLOY_HOOK_URL" ]]; then
-            echo "::warning::VERCEL_DEPLOY_HOOK_URL is not configured; the release is available, but the site will not refresh its release details."
+            echo "::warning::VERCEL_DEPLOY_HOOK_URL is not configured; the stable release is available, but the site archive will not refresh."
           else
             curl --fail --silent --show-error --retry 3 "$VERCEL_DEPLOY_HOOK_URL"
           fi
@@ -62,5 +148,4 @@ jobs:
       - name: Remove temporary payload branch
         env:
           BRANCH_NAME: ${{ github.ref_name }}
-          GH_TOKEN: ${{ github.token }}
         run: git push origin --delete "$BRANCH_NAME"
