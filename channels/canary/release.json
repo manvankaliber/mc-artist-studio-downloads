@@ -9,6 +9,10 @@
   "publishedAt": "2026-10-07T19:24:25Z",
   "downloads": {
     "windowsInstaller": "https://github.com/manvankaliber/mc-artist-studio-downloads/releases/download/canary/MC-Artist-Studio.msi",
-    "windowsPortable": "https://github.com/manvankaliber/mc-artist-studio-downloads/releases/download/canary/MC-Artist-Studio.exe"
+    "windowsPortable": "https://github.com/manvankaliber/mc-artist-studio-downloads/releases/download/canary/MC-Artist-Studio.exe",
+    "checksums": {
+      "windowsInstaller": "7442e8aafc3e90ffdfd9f13e34f570d4b68052e4375fcdf1ceb52fa437972a29",
+      "windowsPortable": "d7c751a13b2d268a30193afb04caee7c2f4d77082bd7081f069ca703d25cd262"
+    }
   }
 }

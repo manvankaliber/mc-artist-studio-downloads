@@ -99,15 +99,23 @@ jobs:
           VERSION="$(jq -r '.version' release/release.json)"
           RELEASE_URL="https://github.com/$GITHUB_REPOSITORY/releases/tag/$TAG"
           ASSET_BASE="https://github.com/$GITHUB_REPOSITORY/releases/download/$TAG"
+          WINDOWS_INSTALLER_SHA256="$(sha256sum release/MC-Artist-Studio.msi | cut -d ' ' -f1)"
+          WINDOWS_PORTABLE_SHA256="$(sha256sum release/MC-Artist-Studio.exe | cut -d ' ' -f1)"
           DOWNLOADS="$(jq -n \
             --arg installer "$ASSET_BASE/MC-Artist-Studio.msi" \
             --arg portable "$ASSET_BASE/MC-Artist-Studio.exe" \
-            '{windowsInstaller:$installer,windowsPortable:$portable}')"
+            --arg installerSha256 "$WINDOWS_INSTALLER_SHA256" \
+            --arg portableSha256 "$WINDOWS_PORTABLE_SHA256" \
+            '{windowsInstaller:$installer,windowsPortable:$portable,checksums:{windowsInstaller:$installerSha256,windowsPortable:$portableSha256}}')"
           if [[ "$CHANNEL" == "beta" ]]; then
+            LINUX_APPIMAGE_SHA256="$(sha256sum release/MC-Artist-Studio.AppImage | cut -d ' ' -f1)"
+            LINUX_DEB_SHA256="$(sha256sum release/MC-Artist-Studio.deb | cut -d ' ' -f1)"
             DOWNLOADS="$(jq -c \
               --arg appimage "$ASSET_BASE/MC-Artist-Studio.AppImage" \
               --arg deb "$ASSET_BASE/MC-Artist-Studio.deb" \
-              '. + {linuxAppImage:$appimage,linuxDeb:$deb}' <<< "$DOWNLOADS")"
+              --arg appimageSha256 "$LINUX_APPIMAGE_SHA256" \
+              --arg debSha256 "$LINUX_DEB_SHA256" \
+              '. + {linuxAppImage:$appimage,linuxDeb:$deb} | .checksums += {linuxAppImage:$appimageSha256,linuxDeb:$debSha256}' <<< "$DOWNLOADS")"
           fi
           cp release/latest.json "$RUNNER_TEMP/channel-payload/latest.json"
           jq \
