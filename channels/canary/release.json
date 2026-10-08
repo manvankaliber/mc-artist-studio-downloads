@@ -1,18 +1,18 @@
 {
   "channel": "canary",
-  "version": "0.2.1-canary.33",
+  "version": "0.2.1-canary.34",
   "tag": "canary",
-  "title": "MC Artist Studio Canary v0.2.1-canary.33",
-  "notes": "Canary preview 0.2.1-canary.33, built after a push to the main branch.",
-  "sourceSha": "b5bc1256d173deae0d4d75cd0bacf9eff6f8de99",
+  "title": "MC Artist Studio Canary v0.2.1-canary.34",
+  "notes": "Canary preview 0.2.1-canary.34, built after a push to the main branch.",
+  "sourceSha": "9ab438e62fe84a94ea1ad211a6390092aac2e883",
   "releaseUrl": "https://github.com/manvankaliber/mc-artist-studio-downloads/releases/tag/canary",
-  "publishedAt": "2026-10-08T12:05:06Z",
+  "publishedAt": "2026-10-08T21:27:48Z",
   "downloads": {
     "windowsInstaller": "https://github.com/manvankaliber/mc-artist-studio-downloads/releases/download/canary/MC-Artist-Studio.msi",
     "windowsPortable": "https://github.com/manvankaliber/mc-artist-studio-downloads/releases/download/canary/MC-Artist-Studio.exe",
     "checksums": {
-      "windowsInstaller": "41ee0ea7a94a316ac3551bf314c6336844f2c10face62558a4b5a0202e85d821",
-      "windowsPortable": "10c217678271e905b87a2c41e4277fe037a3ed30927c958277f549ab257507b2"
+      "windowsInstaller": "2043a56779041d5f0a0535c532216d8e85b6454c2dc5f246ca29bcfccb82bc40",
+      "windowsPortable": "bce83f307f289e9deea6f3b6c41705a20956fb2476a4842affcb7ddb53ac8575"
     }
   }
 }
