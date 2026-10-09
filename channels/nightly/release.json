@@ -1,18 +1,18 @@
 {
   "channel": "nightly",
-  "version": "0.2.1-nightly.20261008.32.1",
-  "tag": "v0.2.1-nightly.20261008.32.1",
-  "title": "MC Artist Studio Nightly v0.2.1-nightly.20261008.32.1",
-  "notes": "Nightly preview 0.2.1-nightly.20261008.32.1, built from the latest main branch commit.",
-  "sourceSha": "7e867570daf4616ea6a244dc87dfeac634b3e099",
-  "releaseUrl": "https://github.com/manvankaliber/mc-artist-studio-downloads/releases/tag/v0.2.1-nightly.20261008.32.1",
-  "publishedAt": "2026-10-08T03:02:45Z",
+  "version": "0.2.1-nightly.20261009.35.1",
+  "tag": "v0.2.1-nightly.20261009.35.1",
+  "title": "MC Artist Studio Nightly v0.2.1-nightly.20261009.35.1",
+  "notes": "Nightly preview 0.2.1-nightly.20261009.35.1, built from the latest main branch commit.",
+  "sourceSha": "9ab438e62fe84a94ea1ad211a6390092aac2e883",
+  "releaseUrl": "https://github.com/manvankaliber/mc-artist-studio-downloads/releases/tag/v0.2.1-nightly.20261009.35.1",
+  "publishedAt": "2026-10-09T03:10:21Z",
   "downloads": {
-    "windowsInstaller": "https://github.com/manvankaliber/mc-artist-studio-downloads/releases/download/v0.2.1-nightly.20261008.32.1/MC-Artist-Studio.msi",
-    "windowsPortable": "https://github.com/manvankaliber/mc-artist-studio-downloads/releases/download/v0.2.1-nightly.20261008.32.1/MC-Artist-Studio.exe",
+    "windowsInstaller": "https://github.com/manvankaliber/mc-artist-studio-downloads/releases/download/v0.2.1-nightly.20261009.35.1/MC-Artist-Studio.msi",
+    "windowsPortable": "https://github.com/manvankaliber/mc-artist-studio-downloads/releases/download/v0.2.1-nightly.20261009.35.1/MC-Artist-Studio.exe",
     "checksums": {
-      "windowsInstaller": "742b4e7cf1944ea99ce4ff0276896dc9998b5eb669946ebdfceaed9b2eac70bb",
-      "windowsPortable": "adf5aaa9cf07f5346c0037f698012cd44e3db205c017cdeff6d18a93939d5011"
+      "windowsInstaller": "c2cd41352c3ef57c80f139a92f0237463e91fc252f4abe819207e4624ca39973",
+      "windowsPortable": "4c207acf08b5224c61e16fd60b28cdd1411ba96b25af5f2f115f248b5180080c"
     }
   }
 }
